@@ -145,6 +145,19 @@ public abstract class AbstractDatabaseFetchProcessor extends AbstractSessionFact
             .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
             .build();
 
+
+    public static final PropertyDescriptor FIRST_MAX_VALUE_COLUMN_HAS_TIES = new PropertyDescriptor.Builder()
+            .name("First Maximum-value Column Has Ties")
+            .description("A boolean that determines whether a greater than or equal to operator is used in the where clause "
+                         + "for the first maximum-value column. This is useful in cases where the maximum value column has ties. "
+                         + "Only use this processor if your downstream processors are idempotent (e.g. Upserts to a target database.")
+            .required(true)
+            .allowableValues("true","false")
+            .defaultValue("false")
+            .expressionLanguageSupported(ExpressionLanguageScope.FLOWFILE_ATTRIBUTES)
+            .build();
+
+
     public static final PropertyDescriptor QUERY_TIMEOUT = new PropertyDescriptor.Builder()
             .name("Max Wait Time")
             .description("The maximum amount of time allowed for a running SQL select query "
@@ -194,6 +207,8 @@ public abstract class AbstractDatabaseFetchProcessor extends AbstractSessionFact
     // pre-fetched when the processor is scheduled, rather than having to populate them on-the-fly.
     protected volatile boolean isDynamicMaxValues = false;
 
+    protected volatile boolean isDynamicFirstMaxValuesHasTies = false;
+
     // This value is cleared when the processor is scheduled, and set to true after setup() is called and completes successfully. This enables
     // the setup logic to be performed in onTrigger() versus OnScheduled to avoid any issues with DB connection when first scheduled to run.
     protected final AtomicBoolean setupComplete = new AtomicBoolean(false);
@@ -228,7 +243,7 @@ public abstract class AbstractDatabaseFetchProcessor extends AbstractSessionFact
         // For backwards-compatibility, keep track of whether the table name and max-value column properties are dynamic (i.e. has expression language)
         isDynamicTableName = validationContext.isExpressionLanguagePresent(validationContext.getProperty(TABLE_NAME).getValue());
         isDynamicMaxValues = validationContext.isExpressionLanguagePresent(validationContext.getProperty(MAX_VALUE_COLUMN_NAMES).getValue());
-
+        isDynamicFirstMaxValuesHasTies = validationContext.isExpressionLanguagePresent(validationContext.getProperty(FIRST_MAX_VALUE_COLUMN_HAS_TIES).getValue());
         return super.customValidate(validationContext);
     }
 

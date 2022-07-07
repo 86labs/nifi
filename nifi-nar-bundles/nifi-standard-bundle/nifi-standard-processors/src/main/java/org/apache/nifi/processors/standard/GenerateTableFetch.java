@@ -183,6 +183,7 @@ public class GenerateTableFetch extends AbstractDatabaseFetchProcessor {
         pds.add(TABLE_NAME);
         pds.add(COLUMN_NAMES);
         pds.add(MAX_VALUE_COLUMN_NAMES);
+        pds.add(FIRST_MAX_VALUE_COLUMN_HAS_TIES);
         pds.add(QUERY_TIMEOUT);
         pds.add(PARTITION_SIZE);
         pds.add(COLUMN_FOR_VALUE_PARTITIONING);
@@ -244,7 +245,7 @@ public class GenerateTableFetch extends AbstractDatabaseFetchProcessor {
     @Override
     public void onTrigger(final ProcessContext context, final ProcessSessionFactory sessionFactory) throws ProcessException {
         // Fetch the column/table info once (if the table name and max value columns are not dynamic). Otherwise do the setup later
-        if (!isDynamicTableName && !isDynamicMaxValues && !setupComplete.get()) {
+        if (!isDynamicTableName && !isDynamicMaxValues && !isDynamicFirstMaxValuesHasTies && !setupComplete.get()) {
             super.setup(context);
         }
         ProcessSession session = sessionFactory.createSession();
@@ -268,6 +269,7 @@ public class GenerateTableFetch extends AbstractDatabaseFetchProcessor {
         final String tableName = context.getProperty(TABLE_NAME).evaluateAttributeExpressions(fileToProcess).getValue();
         final String columnNames = context.getProperty(COLUMN_NAMES).evaluateAttributeExpressions(fileToProcess).getValue();
         final String maxValueColumnNames = context.getProperty(MAX_VALUE_COLUMN_NAMES).evaluateAttributeExpressions(fileToProcess).getValue();
+        final boolean firstMaxValueColumnHasTies = context.getProperty(FIRST_MAX_VALUE_COLUMN_HAS_TIES).evaluateAttributeExpressions(fileToProcess).getValue().contentEquals("true");
         final int partitionSize = context.getProperty(PARTITION_SIZE).evaluateAttributeExpressions(fileToProcess).asInteger();
         final String columnForPartitioning = context.getProperty(COLUMN_FOR_VALUE_PARTITIONING).evaluateAttributeExpressions(fileToProcess).getValue();
         final boolean useColumnValsForPaging = !StringUtils.isEmpty(columnForPartitioning);
@@ -348,7 +350,7 @@ public class GenerateTableFetch extends AbstractDatabaseFetchProcessor {
                     Integer type = getColumnType(tableName, colName, dbAdapter);
 
                     // Add a condition for the WHERE clause
-                    maxValueClauses.add(colName + (index == 0 ? " > " : " >= ") + getLiteralByType(type, maxValue, dbAdapter.getName()));
+                    maxValueClauses.add(colName + ((index == 0 && !firstMaxValueColumnHasTies) ? " > " : " >= ") + getLiteralByType(type, maxValue, dbAdapter.getName()));
                 }
 
             });
