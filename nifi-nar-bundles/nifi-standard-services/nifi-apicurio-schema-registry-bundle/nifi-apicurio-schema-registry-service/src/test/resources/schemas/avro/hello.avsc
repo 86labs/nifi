@@ -1,0 +1,7 @@
+{
+  "type": "record",
+  "namespace": "org.apache.nifi.schemaregistry.apicurio.test",
+  "name": "TestMessage",
+  "doc": "Test message to test schema registry",
+  "fields": []
+}
