@@ -52,8 +52,8 @@ public class HortonworksAttributeSchemaReferenceWriter implements SchemaAccessWr
 
         switch (protocolVersion) {
             case 1:
-                final Long schemaId = id.getIdentifier().getAsLong();
-                final Integer schemaVersion = id.getVersion().getAsInt();
+                final Long schemaId = id.getIdentifierAsLong().getAsLong();
+                final Integer schemaVersion = id.getVersionAsInt().getAsInt();
                 attributes.put(HortonworksAttributeSchemaReferenceStrategy.SCHEMA_ID_ATTRIBUTE, String.valueOf(schemaId));
                 attributes.put(HortonworksAttributeSchemaReferenceStrategy.SCHEMA_VERSION_ATTRIBUTE, String.valueOf(schemaVersion));
                 break;

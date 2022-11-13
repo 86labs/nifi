@@ -3,5 +3,15 @@
   "namespace": "org.apache.nifi.schemaregistry.apicurio.test",
   "name": "TestMessage",
   "doc": "Test message to test schema registry",
-  "fields": []
+  "fields": [
+    {
+      "name": "testMessageType",
+      "type": "string"
+    },
+    {
+      "name": "testMessage",
+      "type": ["null","string"],
+      "default": null
+    }
+  ]
 }

@@ -31,13 +31,19 @@ public interface SchemaIdentifier {
     /**
      * @return the identifier of the schema, if one has been defined.
      */
-    OptionalLong getIdentifier();
-
+    Optional<String> getIdentifier();
+    /**
+     * @return the identifier of the schema as a long for compatibility reasons.
+     */
+    OptionalLong getIdentifierAsLong();
     /**
      * @return the version of the schema, if one has been defined.
      */
-    OptionalInt getVersion();
-
+    Optional<String> getVersion();
+    /**
+     * @return the version of the schema as an integer for compatibility reasons.
+     */
+    OptionalInt getVersionAsInt();
     /**
      * @return the schema version ID of the schema, if one has been defined.
      */
@@ -48,8 +54,12 @@ public interface SchemaIdentifier {
      */
     Optional<String> getBranch();
 
+    /**
+     * @return the name of the group where the schema is located, if one has been defined. Introduced for Apicurio support
+     */
+    Optional<String> getGroupId();
 
-    SchemaIdentifier EMPTY = new StandardSchemaIdentifier(null, null, null, null, null);
+    SchemaIdentifier EMPTY = new StandardSchemaIdentifier(null, null, null, null, null, null);
 
     static Builder builder() {
         return new StandardSchemaIdentifier.Builder();
@@ -62,13 +72,16 @@ public interface SchemaIdentifier {
 
         Builder name(String name);
 
+        Builder id(String id);
         Builder id(Long id);
-
+        Builder version(String version);
         Builder version(Integer version);
 
         Builder schemaVersionId(Long schemaVersionId);
 
         Builder branch(String branch);
+
+        Builder groupId(String groupId);
 
         SchemaIdentifier build();
 

@@ -50,7 +50,7 @@ public class SchemaNameAsAttribute implements SchemaAccessWriter {
             attributes.put(SCHEMA_NAME_ATTRIBUTE, nameOption.get());
         }
 
-        final OptionalInt versionOption = identifier.getVersion();
+        final OptionalInt versionOption = identifier.getVersionAsInt();
         if (versionOption.isPresent()) {
             attributes.put(SCHEMA_VERSION_ATTRIBUTE, String.valueOf(versionOption.getAsInt()));
         }

@@ -48,8 +48,8 @@ public class HortonworksEncodedSchemaReferenceWriter implements SchemaAccessWrit
         // See: https://registry-project.readthedocs.io/en/latest/serdes.html#
         switch(protocolVersion) {
             case 1:
-                final Long id = identifier.getIdentifier().getAsLong();
-                final Integer version = identifier.getVersion().getAsInt();
+                final Long id = identifier.getIdentifierAsLong().getAsLong();
+                final Integer version = identifier.getVersionAsInt().getAsInt();
                 final ByteBuffer bbv1 = ByteBuffer.allocate(13);
                 bbv1.put((byte) 1);
                 bbv1.putLong(id);

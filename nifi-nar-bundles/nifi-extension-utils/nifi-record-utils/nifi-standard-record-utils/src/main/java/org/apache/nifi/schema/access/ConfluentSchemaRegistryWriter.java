@@ -36,7 +36,7 @@ public class ConfluentSchemaRegistryWriter implements SchemaAccessWriter {
     @Override
     public void writeHeader(final RecordSchema schema, final OutputStream out) throws IOException {
         final SchemaIdentifier identifier = schema.getIdentifier();
-        final Long id = identifier.getIdentifier().getAsLong();
+        final Long id = identifier.getIdentifierAsLong().getAsLong();
 
         // This encoding follows the pattern that is provided for serializing data by the Confluent Schema Registry serializer
         // as it is provided at:
@@ -58,12 +58,12 @@ public class ConfluentSchemaRegistryWriter implements SchemaAccessWriter {
     @Override
     public void validateSchema(RecordSchema schema) throws SchemaNotFoundException {
         final SchemaIdentifier identifier = schema.getIdentifier();
-        final OptionalLong identifierOption = identifier.getIdentifier();
+        final OptionalLong identifierOption = identifier.getIdentifierAsLong();
         if (!identifierOption.isPresent()) {
             throw new SchemaNotFoundException("Cannot write Confluent Schema Registry Reference because the Schema Identifier is not known");
         }
 
-        final OptionalInt versionOption = identifier.getVersion();
+        final OptionalInt versionOption = identifier.getVersionAsInt();
         if (!versionOption.isPresent()) {
             throw new SchemaNotFoundException("Cannot write Confluent Schema Registry Reference because the Schema Version is not known");
         }

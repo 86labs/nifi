@@ -106,10 +106,10 @@ public class TestHortonworksAttributeSchemaReferenceWriter {
 
         assertEquals(3, attributes.size());
 
-        assertEquals(String.valueOf(schemaIdentifier.getIdentifier().getAsLong()),
+        assertEquals(String.valueOf(schemaIdentifier.getIdentifierAsLong().getAsLong()),
                 attributes.get(HortonworksAttributeSchemaReferenceStrategy.SCHEMA_ID_ATTRIBUTE));
 
-        assertEquals(String.valueOf(schemaIdentifier.getVersion().getAsInt()),
+        assertEquals(String.valueOf(schemaIdentifier.getVersionAsInt().getAsInt()),
                 attributes.get(HortonworksAttributeSchemaReferenceStrategy.SCHEMA_VERSION_ATTRIBUTE));
 
         assertEquals(String.valueOf(protocolVersion),
@@ -127,10 +127,10 @@ public class TestHortonworksAttributeSchemaReferenceWriter {
 
         assertEquals(4, attributes.size());
 
-        assertEquals(String.valueOf(schemaIdentifier.getIdentifier().getAsLong()),
+        assertEquals(String.valueOf(schemaIdentifier.getIdentifierAsLong().getAsLong()),
                 attributes.get(HortonworksAttributeSchemaReferenceStrategy.SCHEMA_ID_ATTRIBUTE));
 
-        assertEquals(String.valueOf(schemaIdentifier.getVersion().getAsInt()),
+        assertEquals(String.valueOf(schemaIdentifier.getVersionAsInt().getAsInt()),
                 attributes.get(HortonworksAttributeSchemaReferenceStrategy.SCHEMA_VERSION_ATTRIBUTE));
 
         assertEquals(String.valueOf(protocolVersion),

@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentMap;
 
 public class MockSchemaRegistry extends AbstractControllerService implements SchemaRegistry {
     private final ConcurrentMap<String, RecordSchema> schemaNameMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Tuple<Long, Integer>, RecordSchema> schemaIdVersionMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Tuple<String, Integer>, RecordSchema> schemaIdVersionMap = new ConcurrentHashMap<>();
 
     public void addSchema(final String name, final RecordSchema schema) {
         schemaNameMap.put(name, schema);
@@ -50,12 +50,12 @@ public class MockSchemaRegistry extends AbstractControllerService implements Sch
     }
 
     private RecordSchema retrieveSchemaByIdAndVersion(final SchemaIdentifier schemaIdentifier) throws IOException, SchemaNotFoundException {
-        final OptionalLong schemaId = schemaIdentifier.getIdentifier();
+        final OptionalLong schemaId = schemaIdentifier.getIdentifierAsLong();
         if (!schemaId.isPresent()) {
             throw new org.apache.nifi.schema.access.SchemaNotFoundException("Cannot retrieve schema because Schema Id is not present");
         }
 
-        final OptionalInt version = schemaIdentifier.getVersion();
+        final OptionalInt version = schemaIdentifier.getVersionAsInt();
         if (!version.isPresent()) {
             throw new org.apache.nifi.schema.access.SchemaNotFoundException("Cannot retrieve schema because Schema Version is not present");
         }

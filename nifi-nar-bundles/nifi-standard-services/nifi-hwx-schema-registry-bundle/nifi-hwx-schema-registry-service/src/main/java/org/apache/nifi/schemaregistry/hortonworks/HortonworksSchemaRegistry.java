@@ -435,7 +435,7 @@ public class HortonworksSchemaRegistry extends AbstractControllerService impleme
         }
 
         final Optional<String> schemaBranchName = schemaIdentifier.getBranch();
-        final OptionalInt schemaVersion = schemaIdentifier.getVersion();
+        final OptionalInt schemaVersion = schemaIdentifier.getVersionAsInt();
 
         try {
             final SchemaMetadataInfo metadataInfo = client.getSchemaMetadataInfo(schemaName.get());
@@ -490,12 +490,12 @@ public class HortonworksSchemaRegistry extends AbstractControllerService impleme
         final String schemaName;
         final SchemaVersionInfo versionInfo;
 
-        final OptionalLong schemaId = schemaIdentifier.getIdentifier();
+        final OptionalLong schemaId = schemaIdentifier.getIdentifierAsLong();
         if (!schemaId.isPresent()) {
             throw new org.apache.nifi.schema.access.SchemaNotFoundException("Cannot retrieve schema because Schema Id is not present");
         }
 
-        final OptionalInt version = schemaIdentifier.getVersion();
+        final OptionalInt version = schemaIdentifier.getVersionAsInt();
         if (!version.isPresent()) {
             throw new org.apache.nifi.schema.access.SchemaNotFoundException("Cannot retrieve schema because Schema Version is not present");
         }

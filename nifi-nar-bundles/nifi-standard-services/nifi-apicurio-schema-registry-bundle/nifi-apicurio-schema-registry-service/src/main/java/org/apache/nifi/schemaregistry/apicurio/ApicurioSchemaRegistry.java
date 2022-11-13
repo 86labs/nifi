@@ -2,10 +2,17 @@ package org.apache.nifi.schemaregistry.apicurio;
 
 import io.apicurio.registry.rest.client.RegistryClient;
 import io.apicurio.registry.rest.client.RegistryClientFactory;
+import io.apicurio.registry.rest.client.exception.ArtifactNotFoundException;
+import io.apicurio.registry.rest.client.exception.VersionNotFoundException;
+import io.apicurio.registry.rest.v2.beans.ArtifactMetaData;
+import io.apicurio.registry.rest.v2.beans.VersionMetaData;
+import io.apicurio.registry.types.ArtifactType;
+import org.apache.avro.Schema;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnDisabled;
 import org.apache.nifi.annotation.lifecycle.OnEnabled;
+import org.apache.nifi.avro.AvroTypeUtil;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.controller.AbstractControllerService;
 import org.apache.nifi.controller.ConfigurationContext;
@@ -19,10 +26,13 @@ import org.apache.nifi.serialization.record.RecordSchema;
 import org.apache.nifi.serialization.record.SchemaIdentifier;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 @Tags({"schema","registry","avro","apicurio"})
-@CapabilityDescription("Provides a Schema Registry Service that interacts with an Apicurio Schema Registry, available at https://www.apicur.io/registry/")
+@CapabilityDescription("Provides a Schema Registry Service that interacts with an Apicurio Schema Registry, available at https://www.apicur.io/registry/" +
+                       "This implementation uses the branch field to specify the Apicurio groupId." +
+                       "Currently only AVRO schemas are supported.")
 public class ApicurioSchemaRegistry extends AbstractControllerService implements SchemaRegistry {
 
     private static final Set<SchemaField> schemaFields = EnumSet.of(SchemaField.SCHEMA_NAME,
@@ -33,7 +43,7 @@ public class ApicurioSchemaRegistry extends AbstractControllerService implements
             SchemaField.SCHEMA_VERSION,
             SchemaField.SCHEMA_VERSION_ID);
 
-    static final PropertyDescriptor URL = new PropertyDescriptor.Builder()
+    public static final PropertyDescriptor URL = new PropertyDescriptor.Builder()
             .name("url")
             .displayName("Schema Registry URL")
             .description("URL of the schema registry that this Controller Service should connect to, including version. For example, http://localhost:8080/apis/registry/v2")
@@ -85,11 +95,89 @@ public class ApicurioSchemaRegistry extends AbstractControllerService implements
         initialized = false;
     }
 
-    @Override
-    public RecordSchema retrieveSchema(SchemaIdentifier schemaIdentifier) throws IOException, SchemaNotFoundException {
-        OptionalLong l  = schemaIdentifier.getIdentifier();
 
-        return null;
+
+    private SchemaIdentifier buildSchemaIdentifierFromMetadata(ArtifactMetaData metadata,
+                                                               VersionMetaData versionMetaData,
+                                                               String groupId) {
+        getLogger().info("Got metadata " + metadata);
+        getLogger().info("Got version metadata " + versionMetaData);
+        SchemaIdentifier identifier;
+        try {
+            Integer versionInt = Integer.parseInt(metadata.getVersion());
+            identifier = SchemaIdentifier.builder()
+                    .name(metadata.getName())
+                    .groupId(groupId)
+                    .branch(metadata.getVersion())
+                    .id(metadata.getId())
+                    .version(versionInt)
+                    .schemaVersionId(versionMetaData.getGlobalId())
+                    .build();
+        } catch (NumberFormatException ex) {
+            identifier = SchemaIdentifier.builder()
+                    .name(metadata.getName())
+                    .groupId(groupId)
+                    .branch(metadata.getVersion())
+                    .id(metadata.getId())
+                    .schemaVersionId(versionMetaData.getGlobalId())
+                    .build();
+        }
+        return identifier;
+    }
+    private RecordSchema retrieveSchemaByGroupAndName(SchemaIdentifier schemaIdentifier) throws SchemaNotFoundException {
+        final RegistryClient client = getClient();
+
+        final Optional<String> schemaNameOpt = schemaIdentifier.getName();
+        final Optional<String> groupIdOpt = schemaIdentifier.getGroupId();
+        final Optional<String> versionOpt;
+        if(schemaIdentifier.getVersion().isPresent()) {
+            versionOpt = schemaIdentifier.getVersion().stream().mapToObj(Integer::toString).findFirst();;
+        } else {
+            versionOpt = schemaIdentifier.getBranch();
+        }
+
+        schemaIdentifier.getBranch();
+
+        if (!schemaNameOpt.isPresent()) {
+            throw new SchemaNotFoundException("Cannot retrieve schema because Schema Name is not present");
+        }
+        if (!groupIdOpt.isPresent()) {
+            throw new SchemaNotFoundException("Cannot retrieve schema because Group ID is not present");
+        }
+
+        try {
+            ArtifactMetaData metadata = client.getArtifactMetaData(groupIdOpt.get(), schemaNameOpt.get());
+            VersionMetaData versionMetaData;
+            InputStream schemaInputStream;
+            if (versionOpt.isPresent()) {
+                versionMetaData = client.getArtifactVersionMetaData(groupIdOpt.get(), schemaNameOpt.get(), versionOpt.get());
+                schemaInputStream = client.getArtifactVersion(groupIdOpt.get(), schemaNameOpt.get(), versionOpt.get());
+            } else {
+                versionMetaData = client.getArtifactVersionMetaData(groupIdOpt.get(), schemaNameOpt.get(), metadata.getVersion());
+                schemaInputStream = client.getLatestArtifact(groupIdOpt.get(), schemaNameOpt.get());
+            }
+
+            SchemaIdentifier returnedSchemaIdentifier = buildSchemaIdentifierFromMetadata(metadata, versionMetaData, groupIdOpt.get());
+            String schemaString = new String(schemaInputStream.readAllBytes());
+            final Schema schema = new Schema.Parser().parse(schemaString);
+            return AvroTypeUtil.createSchema(schema, schemaString, returnedSchemaIdentifier);
+        } catch (final ArtifactNotFoundException ex){
+            String errorMsg = String.format("No schema was found for group %s artifact %s",
+                                                groupIdOpt.get(), schemaNameOpt.get());
+            throw new SchemaNotFoundException(errorMsg);
+        } catch (final VersionNotFoundException ex){
+            String errorMsg = String.format("No schema was found for group %s artifact %s version %s",
+                    groupIdOpt.get(), schemaNameOpt.get(), versionOpt.get());
+            throw new SchemaNotFoundException(errorMsg);
+        } catch (final Exception ex) {
+            getLogger().error("Could not create the schema or find it", ex);
+            return null;
+        }
+    }
+
+    @Override
+    public RecordSchema retrieveSchema(SchemaIdentifier schemaIdentifier) throws  SchemaNotFoundException {
+        return retrieveSchemaByGroupAndName(schemaIdentifier);
     }
 
     @Override

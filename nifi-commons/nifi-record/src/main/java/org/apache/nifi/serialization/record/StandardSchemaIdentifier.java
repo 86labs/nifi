@@ -23,18 +23,21 @@ import java.util.OptionalLong;
 
 public class StandardSchemaIdentifier implements SchemaIdentifier {
     private final Optional<String> name;
-    private final OptionalLong identifier;
-    private final OptionalInt version;
+    private final Optional<String> identifier;
+    private final Optional<String> version;
     private final OptionalLong schemaVersionId;
     private final Optional<String> branch;
 
-    StandardSchemaIdentifier(final String name, final Long identifier, final Integer version,
-            final Long schemaVersionId, final String branch) {
+    private final Optional<String> groupId;
+
+    StandardSchemaIdentifier(final String name, final String identifier, final String version,
+            final Long schemaVersionId, final String branch, final String groupId) {
         this.name = Optional.ofNullable(name);
-        this.identifier = identifier == null ? OptionalLong.empty() : OptionalLong.of(identifier);
-        this.version = version == null ? OptionalInt.empty() : OptionalInt.of(version);
+        this.identifier = Optional.ofNullable(identifier);
+        this.version = Optional.ofNullable(version);
         this.schemaVersionId = schemaVersionId == null ? OptionalLong.empty() : OptionalLong.of(schemaVersionId);
         this.branch = Optional.ofNullable(branch);
+        this.groupId = Optional.ofNullable(groupId);
     }
 
     @Override
@@ -43,13 +46,23 @@ public class StandardSchemaIdentifier implements SchemaIdentifier {
     }
 
     @Override
-    public OptionalLong getIdentifier() {
+    public Optional<String> getIdentifier() {
         return identifier;
     }
 
     @Override
-    public OptionalInt getVersion() {
+    public OptionalLong getIdentifierAsLong() {
+        return identifier.stream().mapToLong( n -> Long.parseLong(n)).findFirst();
+    }
+
+    @Override
+    public Optional<String> getVersion() {
         return version;
+    }
+
+    @Override
+    public OptionalInt getVersionAsInt() {
+        return version.stream().mapToInt( n -> Integer.parseInt(n)).findFirst();
     }
 
     @Override
@@ -63,9 +76,12 @@ public class StandardSchemaIdentifier implements SchemaIdentifier {
     }
 
     @Override
+    public Optional<String> getGroupId() { return groupId; }
+
+    @Override
     public int hashCode() {
         return 31 + 41 * getName().hashCode() + 41 * getIdentifier().hashCode() + 41 * getVersion().hashCode()
-                + 41 * getSchemaVersionId().hashCode() + 41 * getBranch().hashCode();
+                + 41 * getSchemaVersionId().hashCode() + 41 * getBranch().hashCode() + 41 * getGroupId().hashCode();
     }
 
     @Override
@@ -84,7 +100,8 @@ public class StandardSchemaIdentifier implements SchemaIdentifier {
                 && getIdentifier().equals(other.getIdentifier())
                 && getVersion().equals(other.getVersion())
                 && getSchemaVersionId().equals(other.getSchemaVersionId())
-                && getBranch().equals(other.getBranch());
+                && getBranch().equals(other.getBranch())
+                && getGroupId().equals(other.getGroupId());
     }
 
     @Override
@@ -93,7 +110,8 @@ public class StandardSchemaIdentifier implements SchemaIdentifier {
                 + "identifier = " + identifier + ", "
                 + "version = " + version + ", "
                 + "schemaVersionId = " + schemaVersionId + ", "
-                + "branch = " + branch + " ]";
+                + "branch = " + branch + ", "
+                + "groupId = " + groupId + " ]";
     }
 
     /**
@@ -103,8 +121,9 @@ public class StandardSchemaIdentifier implements SchemaIdentifier {
 
         private String name;
         private String branch;
-        private Long identifier;
-        private Integer version;
+        private String groupId;
+        private String identifier;
+        private String version;
         private Long schemaVersionId;
 
         @Override
@@ -114,23 +133,39 @@ public class StandardSchemaIdentifier implements SchemaIdentifier {
         }
 
         @Override
-        public SchemaIdentifier.Builder id(final Long id) {
+        public SchemaIdentifier.Builder id(final String id) {
             this.identifier = id;
             return this;
         }
 
         @Override
-        public SchemaIdentifier.Builder version(final Integer version) {
-            this.version = version;
+        public SchemaIdentifier.Builder id(final Long id) {
+            this.identifier = String.valueOf(id);
             return this;
         }
 
+        @Override
+        public SchemaIdentifier.Builder version(final Integer version) {
+            this.version = String.valueOf(version);
+            return this;
+        }
+
+        @Override
+        public SchemaIdentifier.Builder version(final String version) {
+            this.version = version;
+            return this;
+        }
         @Override
         public SchemaIdentifier.Builder branch(final String branch) {
             this.branch = branch;
             return this;
         }
 
+        @Override
+        public SchemaIdentifier.Builder groupId(final String groupId) {
+            this.groupId = groupId;
+            return this;
+        }
         @Override
         public SchemaIdentifier.Builder schemaVersionId(final Long schemaVersionId) {
             this.schemaVersionId = schemaVersionId;
@@ -139,7 +174,7 @@ public class StandardSchemaIdentifier implements SchemaIdentifier {
 
         @Override
         public SchemaIdentifier build() {
-            return new StandardSchemaIdentifier(name, identifier, version, schemaVersionId, branch);
+            return new StandardSchemaIdentifier(name, identifier, version, schemaVersionId, branch, groupId);
         }
     }
 }

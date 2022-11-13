@@ -65,7 +65,7 @@ public class TestConfluentSchemaRegistryWriter {
         try (final ByteArrayInputStream bytesIn = new ByteArrayInputStream(out.toByteArray());
              final DataInputStream in = new DataInputStream(bytesIn)) {
             assertEquals(0, in.readByte());
-            assertEquals((int) schemaIdentifier.getIdentifier().getAsLong(), in.readInt());
+            assertEquals((int) schemaIdentifier.getIdentifierAsLong().getAsLong(), in.readInt());
         }
     }
 
